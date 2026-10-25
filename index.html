@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PlayZone – Jeux gratuits dans le navigateur</title>
+<style>
+:root{--bg:#f4f1fb;--card:#fff;--tx:#1b1535;--mut:#6b6488;--ac:#6d4aff;--bd:#ddd6f3;--cell:#e9e4f7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#130f26;--card:#1f1942;--tx:#f1eeff;--mut:#a59fc8;--ac:#8f74ff;--bd:#352c66;--cell:#2a2354}}
+:root[data-theme="dark"]{--bg:#130f26;--card:#1f1942;--tx:#f1eeff;--mut:#a59fc8;--ac:#8f74ff;--bd:#352c66;--cell:#2a2354}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 16px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;border-bottom:1px solid var(--bd)}
+.logo{font:800 26px/1 "Arial Black",Impact,sans-serif;letter-spacing:-1px;color:var(--ac)}
+.logo span{color:var(--tx)}
+#q{flex:1;min-width:160px;padding:11px 16px;border-radius:99px;border:2px solid var(--bd);background:var(--card);color:var(--tx);font:inherit}
+#q:focus,button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+#th{border:0;background:var(--card);color:var(--tx);width:42px;height:42px;border-radius:50%;font-size:20px;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.hero{padding:22px;border-radius:20px;background:linear-gradient(120deg,#6d4aff,#ff5fa2);color:#fff;margin-bottom:18px}
+.hero h1{margin:0 0 4px;font:800 clamp(24px,5vw,38px)/1.1 "Arial Black",Impact,sans-serif}
+.hero p{margin:0;opacity:.95}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px}
+.chip{flex:none;border:2px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 16px;border-radius:99px;font:600 15px inherit;cursor:pointer}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.tile{border:0;padding:0;border-radius:18px;overflow:hidden;background:var(--card);cursor:pointer;text-align:left;color:var(--tx);box-shadow:0 2px 0 var(--bd);transition:transform .15s}
+.tile:hover{transform:scale(1.04)}
+.tile .pic{height:110px;display:grid;place-items:center;font-size:54px}
+.tile b{display:block;padding:8px 12px 0}
+.tile small{display:block;padding:0 12px 10px;color:var(--mut)}
+.none{color:var(--mut);padding:30px 0;text-align:center}
+footer{text-align:center;color:var(--mut);padding:24px 16px;font-size:14px}
+.modal{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column;overflow:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.modal.open{display:flex}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bd)}
+.bar h2{margin:0;font-size:20px;flex:1}
+.bar .sc{font-weight:700;color:var(--ac)}
+.x{border:0;background:var(--ac);color:#fff;border-radius:99px;padding:9px 16px;font:700 15px inherit;cursor:pointer}
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px}
+.msg{color:var(--mut);text-align:center;min-height:24px}
+canvas{max-width:100%;height:auto;border-radius:14px;touch-action:none;background:#0f172a}
+.pad{display:grid;grid-template-columns:repeat(3,64px);gap:8px}
+.pad button{height:56px;border:0;border-radius:14px;background:var(--cell);color:var(--tx);font-size:22px;cursor:pointer}
+.pad button:nth-child(1){grid-column:2}
+.board{display:grid;gap:8px;width:min(92vw,380px);touch-action:none}
+.b4{grid-template-columns:repeat(4,1fr)}.b3{grid-template-columns:repeat(3,1fr)}
+.board>*{aspect-ratio:1;border:0;border-radius:14px;background:var(--cell);color:var(--tx);font:800 clamp(20px,7vw,34px) "Arial Black",sans-serif;display:grid;place-items:center;cursor:pointer;padding:0}
+.board .on{background:var(--ac);color:#fff}
+.board .up{background:#ffb020;font-size:40px}
+.again{border:0;background:var(--ac);color:#fff;padding:11px 22px;border-radius:99px;font:700 16px inherit;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Play<span>Zone</span></div>
+  <input id="q" type="search" placeholder="Rechercher un jeu…" aria-label="Rechercher un jeu">
+  <button id="th" aria-label="Changer de thème">🌓</button>
+</header>
+<main>
+  <section class="hero"><h1>Des jeux gratuits, sans téléchargement</h1><p>Lance une partie en un clic, sur ordinateur comme sur téléphone.</p></section>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
+  <p class="none" id="none" hidden>Aucun jeu ne correspond. Essaie un autre mot.</p>
+</main>
+<footer>PlayZone – 100 % HTML, CSS et JavaScript</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="bar"><h2 id="mt"></h2><span class="sc" id="sc"></span><button class="x" id="cl">Fermer</button></div>
+  <div class="stage" id="stage"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+let off=null;
+const rnd=n=>Math.random()*n|0;
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+function swipe(el,cb){let x,y;el.addEventListener("touchstart",e=>{x=e.touches[0].clientX;y=e.touches[0].clientY},{passive:true});
+el.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-x,dy=e.changedTouches[0].clientY-y;
+if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+cb(Math.abs(dx)>Math.abs(dy)?(dx>0?"R":"L"):(dy>0?"D":"U"))})}
+const keyMap={ArrowLeft:"L",ArrowRight:"R",ArrowUp:"U",ArrowDown:"D"};
+function keys(cb){const f=e=>{if(keyMap[e.key]){e.preventDefault();cb(keyMap[e.key])}};document.addEventListener("keydown",f);return()=>document.removeEventListener("keydown",f)}
+function pad(el,cb){const p=document.createElement("div");p.className="pad";
+[["U","▲"],["L","◀"],["D","▼"],["R","▶"]].forEach(([d,t])=>{const b=document.createElement("button");b.textContent=t;b.setAttribute("aria-label",d);b.onclick=()=>cb(d);p.append(b)});
+p.children[1].style.gridColumn=1;p.children[1].style.gridRow=2;p.children[2].style.gridColumn=2;p.children[2].style.gridRow=2;p.children[3].style.gridColumn=3;p.children[3].style.gridRow=2;
+p.children[0].style.gridRow=1;el.append(p)}
+
+/* ---------- SNAKE ---------- */
+function snake(el,sc){
+  el.innerHTML='<canvas width="300" height="300"></canvas><div class="msg">Glisse ou utilise les flèches. Touche le jeu pour rejouer.</div>';
+  const cv=el.querySelector("canvas"),c=cv.getContext("2d");
+  let s,d,nd,f,n,dead;
+  const food=()=>{do{f=[rnd(15),rnd(15)]}while(s.some(p=>p[0]==f[0]&&p[1]==f[1]))};
+  const reset=()=>{s=[[7,7],[6,7],[5,7]];d=nd=[1,0];n=0;dead=false;food();sc("Score : 0")};
+  const dir={L:[-1,0],R:[1,0],U:[0,-1],D:[0,1]};
+  const set=k=>{const v=dir[k];if(v[0]!==-d[0]||v[1]!==-d[1])nd=v};
+  const draw=()=>{c.fillStyle="#0f172a";c.fillRect(0,0,300,300);
+    c.fillStyle="#ff4d6d";c.beginPath();c.arc(f[0]*20+10,f[1]*20+10,7,0,7);c.fill();
+    s.forEach((p,i)=>{c.fillStyle=i?"#22c55e":"#86efac";c.fillRect(p[0]*20+1,p[1]*20+1,18,18)});
+    if(dead){c.fillStyle="rgba(0,0,0,.6)";c.fillRect(0,0,300,300);c.fillStyle="#fff";c.font="bold 26px sans-serif";c.textAlign="center";c.fillText("Perdu !",150,150)}};
+  const tick=()=>{if(dead)return;d=nd;const h=[s[0][0]+d[0],s[0][1]+d[1]];
+    if(h[0]<0||h[1]<0||h[0]>14||h[1]>14||s.some(p=>p[0]==h[0]&&p[1]==h[1])){dead=true;draw();return}
+    s.unshift(h);if(h[0]==f[0]&&h[1]==f[1]){n++;sc("Score : "+n);food()}else s.pop();draw()};
+  reset();draw();const id=setInterval(tick,125);
+  cv.onclick=()=>{if(dead)reset()};
+  swipe(cv,set);pad(el,set);const k=keys(set);
+  return()=>{clearInterval(id);k()}
+}
+
+/* ---------- 2048 ---------- */
+function g2048(el,sc){
+  el.innerHTML='<div class="board b4" id="bd"></div><div class="msg">Glisse ou utilise les flèches pour fusionner les tuiles.</div>';
+  const bd=el.querySelector("#bd");let b,s;
+  const add=()=>{const e=b.map((v,i)=>v?-1:i).filter(i=>i>=0);if(e.length)b[e[rnd(e.length)]]=Math.random()<.9?2:4};
+  const line=a=>{a=a.filter(x=>x);for(let i=0;i<a.length-1;i++)if(a[i]==a[i+1]){a[i]*=2;s+=a[i];a.splice(i+1,1)}while(a.length<4)a.push(0);return a};
+  const idx=(d,i)=>{const r=[0,1,2,3];const o=d=="L"?r.map(j=>i*4+j):d=="R"?r.map(j=>i*4+3-j):d=="U"?r.map(j=>j*4+i):r.map(j=>(3-j)*4+i);return o};
+  const draw=()=>{bd.innerHTML="";b.forEach(v=>{const t=document.createElement("div");t.textContent=v||"";
+    if(v){t.style.background=`hsl(${260-Math.log2(v)*22} 80% ${v>4?55:70}%)`;t.style.color=v>4?"#fff":"#1b1535"}bd.append(t)});sc("Score : "+s)};
+  const move=d=>{let ch=false;for(let i=0;i<4;i++){const ix=idx(d,i),old=ix.map(j=>b[j]),nw=line(old);nw.forEach((v,k)=>{if(b[ix[k]]!==v)ch=true;b[ix[k]]=v})}
+    if(ch)add();draw()};
+  b=Array(16).fill(0);s=0;add();add();draw();
+  swipe(bd,move);const k=keys(move);return k
+}
+
+/* ---------- MEMORY ---------- */
+function memory(el,sc){
+  el.innerHTML='<div class="board b4" id="bd"></div><div class="msg" id="m"></div>';
+  const bd=el.querySelector("#bd"),m=el.querySelector("#m");
+  const em=["🍎","🍌","🍇","🍒","🍉","🥝","🍋","🍓"];
+  const cards=shuffle([...em,...em]);let open=[],lock=false,moves=0,found=0;
+  cards.forEach((e,i)=>{const b=document.createElement("button");b.textContent="?";b.onclick=()=>{
+    if(lock||b.classList.contains("on")||open.includes(i))return;
+    b.textContent=e;b.classList.add("on");open.push(i);
+    if(open.length==2){moves++;sc("Coups : "+moves);const [x,y]=open;
+      if(cards[x]==cards[y]){found++;open=[];if(found==8)m.textContent="Bravo ! Terminé en "+moves+" coups."}
+      else{lock=true;setTimeout(()=>{[x,y].forEach(j=>{const t=bd.children[j];t.textContent="?";t.classList.remove("on")});open=[];lock=false},700)}}};
+    bd.append(b)});
+  sc("Coups : 0");m.textContent="Trouve les 8 paires."
+}
+
+/* ---------- MORPION ---------- */
+function morpion(el,sc){
+  el.innerHTML='<div class="board b3" id="bd"></div><div class="msg" id="m"></div><button class="again" id="r">Nouvelle partie</button>';
+  const bd=el.querySelector("#bd"),m=el.querySelector("#m");
+  const W=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  let b,over,w=0,l=0;
+  const win=p=>W.some(r=>r.every(i=>b[i]==p));
+  const draw=()=>{bd.innerHTML="";b.forEach((v,i)=>{const t=document.createElement("button");t.textContent=v;if(v)t.classList.add("on");t.onclick=()=>play(i);bd.append(t)});sc(`Victoires ${w} – Défaites ${l}`)};
+  const find=p=>{for(const r of W){const v=r.map(i=>b[i]);if(v.filter(x=>x==p).length==2&&v.includes(""))return r[v.indexOf("")]}return -1};
+  const free=()=>b.map((v,i)=>v?-1:i).filter(i=>i>=0);
+  const end=t=>{over=true;m.textContent=t;draw()};
+  function play(i){if(over||b[i])return;b[i]="X";
+    if(win("X")){w++;return end("Tu as gagné !")}
+    if(!free().length)return end("Égalité.");
+    let a=find("O");if(a<0)a=find("X");if(a<0&&!b[4])a=4;if(a<0)a=free()[rnd(free().length)];
+    b[a]="O";
+    if(win("O")){l++;return end("L’ordinateur a gagné.")}
+    if(!free().length)return end("Égalité.");draw()}
+  const reset=()=>{b=Array(9).fill("");over=false;m.textContent="À toi de jouer (X).";draw()};
+  el.querySelector("#r").onclick=reset;reset()
+}
+
+/* ---------- TAUPE ---------- */
+function taupe(el,sc){
+  el.innerHTML='<div class="board b3" id="bd"></div><div class="msg" id="m"></div><button class="again" id="r">Jouer</button>';
+  const bd=el.querySelector("#bd"),m=el.querySelector("#m"),r=el.querySelector("#r");
+  let n=0,t=30,up=-1,i1,i2;const H=[];
+  for(let i=0;i<9;i++){const b=document.createElement("button");b.textContent="🕳️";b.onclick=()=>{if(up===i){n++;sc("Score : "+n);hide()}};H.push(b);bd.append(b)}
+  const hide=()=>{if(up>=0){H[up].textContent="🕳️";H[up].classList.remove("up");up=-1}};
+  const show=()=>{hide();up=rnd(9);H[up].textContent="🐹";H[up].classList.add("up")};
+  const stop=()=>{clearInterval(i1);clearInterval(i2);hide()};
+  const start=()=>{stop();n=0;t=30;sc("Score : 0");m.textContent="Temps : 30 s";r.hidden=true;
+    i1=setInterval(show,750);
+    i2=setInterval(()=>{t--;m.textContent="Temps : "+t+" s";if(t<=0){stop();m.textContent="Terminé ! Score : "+n;r.hidden=false;r.textContent="Rejouer"}},1000)};
+  r.onclick=start;m.textContent="Attrape un maximum de taupes en 30 secondes.";sc("Score : 0");
+  return stop
+}
+
+const GAMES=[
+ {n:"Snake",e:"🐍",c:"Arcade",col:"#22c55e,#0e9f6e",run:snake},
+ {n:"2048",e:"🔢",c:"Puzzle",col:"#8b5cf6,#d946ef",run:g2048},
+ {n:"Memory",e:"🍒",c:"Puzzle",col:"#f97316,#facc15",run:memory},
+ {n:"Morpion",e:"❌",c:"Stratégie",col:"#3b82f6,#06b6d4",run:morpion},
+ {n:"Attrape-taupe",e:"🐹",c:"Réflexe",col:"#ec4899,#f43f5e",run:taupe}
+];
+let cat="Tous";
+const cats=["Tous",...new Set(GAMES.map(g=>g.c))];
+function render(){
+  const q=$("#q").value.trim().toLowerCase();
+  const list=GAMES.filter(g=>(cat=="Tous"||g.c==cat)&&g.n.toLowerCase().includes(q));
+  $("#grid").innerHTML="";
+  list.forEach(g=>{const b=document.createElement("button");b.className="tile";
+    b.innerHTML=`<div class="pic" style="background:linear-gradient(135deg,${g.col})">${g.e}</div><b>${g.n}</b><small>${g.c}</small>`;
+    b.onclick=()=>openGame(g);$("#grid").append(b)});
+  $("#none").hidden=list.length>0;
+  $("#chips").innerHTML="";
+  cats.forEach(c=>{const b=document.createElement("button");b.className="chip"+(c==cat?" on":"");b.textContent=c;b.onclick=()=>{cat=c;render()};$("#chips").append(b)})
+}
+function openGame(g){$("#mt").textContent=g.n;$("#sc").textContent="";$("#stage").innerHTML="";
+  $("#modal").classList.add("open");off=g.run($("#stage"),t=>$("#sc").textContent=t)}
+function closeGame(){$("#modal").classList.remove("open");if(off)off();off=null;$("#stage").innerHTML=""}
+$("#cl").onclick=closeGame;
+document.addEventListener("keydown",e=>{if(e.key=="Escape")closeGame()});
+$("#q").oninput=render;
+$("#th").onclick=()=>{const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme=="dark":matchMedia("(prefers-color-scheme:dark)").matches;d.dataset.theme=dark?"light":"dark"};
+render();
+</script>
+</body>
+</html>
